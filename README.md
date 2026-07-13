@@ -9,7 +9,7 @@ Glassbox loads DistilGPT-2 entirely client-side (via [Transformers.js](https://g
 - **Step-through generation** — add the most likely token, sample randomly, or *click any candidate* to force it and watch the distribution re-form
 - **Temperature slider** — drag it and watch the probability distribution flatten or sharpen in real time
 
-**Privacy:** everything runs in your browser. Nothing you type is ever sent to a server. The only network traffic is the one-time model download (~45 MB) from the Hugging Face hub, which your browser then caches.
+**Privacy:** everything runs in your browser. Nothing you type is ever sent to a server. The model files (~45 MB) are served from this repo itself via GitHub Pages and cached by your browser — no third-party services at runtime. (If the models/ folder is absent, it falls back to downloading from the Hugging Face hub.)
 
 ## Try it
 

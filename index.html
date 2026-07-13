@@ -153,7 +153,12 @@
 <script type="module">
 import { AutoTokenizer, AutoModelForCausalLM, env } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.1";
 
-env.allowLocalModels = false;
+// Local-first: serve model files from this site's own ./models/ folder
+// (run get-model.sh once to populate it). Falls back to the Hugging Face
+// hub automatically if the local copy isn't present.
+env.allowLocalModels = true;
+env.allowRemoteModels = true;
+env.localModelPath = new URL("./models/", window.location.href).href;
 
 const MODEL_ID = "Xenova/distilgpt2";
 const TOP_K = 10;
@@ -194,7 +199,8 @@ $("btn-load").addEventListener("click", async () => {
     console.error(e);
     $("error").classList.remove("hidden");
     $("error").textContent = "Failed to load the model: " + (e?.message || e) +
-      " — check your connection and reload. Corporate networks sometimes block huggingface.co.";
+      " — if this site's ./models/ folder is populated this shouldn't happen; " +
+      "otherwise the fallback download from huggingface.co may be blocked or rate-limited on your network.";
     $("btn-load").disabled = false;
   }
 });
