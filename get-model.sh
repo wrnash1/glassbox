@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
-# get-model.sh — one-time download of DistilGPT-2 (quantized ONNX) into ./models/
-# so Glassbox serves the model itself with no runtime Hugging Face dependency.
+# get-model.sh (v2) — download DistilGPT-2 (quantized ONNX) into ./models/
+# Tries huggingface.co first, then the hf-mirror.com mirror for any file
+# that fails. Verifies the model file is complete before declaring success.
 #
-# Run this from the repo root on a network that can reach huggingface.co:
-#   bash get-model.sh
-# Then commit and push the models/ folder.
+# Run from the repo root:  bash get-model.sh
 
-set -euo pipefail
+set -uo pipefail
 
-BASE="https://huggingface.co/Xenova/distilgpt2/resolve/main"
 DEST="models/Xenova/distilgpt2"
-
+SOURCES=(
+  "https://huggingface.co/Xenova/distilgpt2/resolve/main"
+  "https://hf-mirror.com/Xenova/distilgpt2/resolve/main"
+)
 FILES=(
   "config.json"
   "tokenizer.json"
@@ -21,16 +22,43 @@ FILES=(
 
 mkdir -p "$DEST/onnx"
 
+fetch() {  # fetch <relative-path>
+  local f="$1"
+  for base in "${SOURCES[@]}"; do
+    echo "→ $f  (from ${base%%/Xenova*})"
+    if curl -fL --retry 2 --connect-timeout 15 -o "$DEST/$f" "$base/$f"; then
+      return 0
+    fi
+    echo "   ...failed, trying next source"
+    rm -f "$DEST/$f"   # never leave partial files behind
+  done
+  return 1
+}
+
+ok=true
 for f in "${FILES[@]}"; do
-  echo "→ downloading $f"
-  curl -fL --retry 3 --create-dirs -o "$DEST/$f" "$BASE/$f"
+  fetch "$f" || { echo "!! Could not download $f from any source"; ok=false; }
 done
 
+# sanity check: the model file must be tens of MB, not a stub or error page
+if [ -f "$DEST/onnx/model_quantized.onnx" ]; then
+  size=$(wc -c < "$DEST/onnx/model_quantized.onnx")
+  if [ "$size" -lt 10000000 ]; then
+    echo "!! model_quantized.onnx is only $size bytes — that's a partial/error file, removing it"
+    rm -f "$DEST/onnx/model_quantized.onnx"
+    ok=false
+  else
+    echo "✓ model_quantized.onnx looks complete ($(( size / 1024 / 1024 )) MB)"
+  fi
+fi
+
 echo ""
-echo "All files downloaded into $DEST"
-du -sh "$DEST"
-echo ""
-echo "Next steps:"
-echo "  1. In GitHub Desktop you'll see the new models/ folder as changes"
-echo "  2. Commit with a message like 'Self-host model files' and push"
-echo "  3. Wait ~1 minute for Pages to redeploy, then reload the site"
+if $ok; then
+  echo "SUCCESS — all files in $DEST"
+  du -sh "$DEST"
+  echo ""
+  echo "Next: commit the models/ folder in GitHub Desktop and push."
+else
+  echo "FAILED — send the output above to Claude and we'll try another route."
+  exit 1
+fi
