@@ -101,7 +101,7 @@
   <section class="panel" id="loader">
     <h2>1 · Load the model</h2>
     <p style="font-size:0.9rem; color:var(--muted); margin-bottom:0.8rem;">
-      Glassbox downloads <b style="color:var(--text)">DistilGPT-2</b> (~45 MB, quantized) from the Hugging Face hub
+      Glassbox loads <b style="color:var(--text)">DistilGPT-2</b> (~84 MB, quantized) served from this site itself
       the first time you use it, then caches it in your browser. It runs entirely client-side via
       <a href="https://github.com/huggingface/transformers.js" style="color:var(--accent)">Transformers.js</a>.
     </p>
@@ -190,7 +190,11 @@ $("btn-load").addEventListener("click", async () => {
     $("prog-status").textContent = "Loading tokenizer…";
     tokenizer = await AutoTokenizer.from_pretrained(MODEL_ID, { progress_callback: cb });
     $("prog-status").textContent = "Loading model weights…";
-    model = await AutoModelForCausalLM.from_pretrained(MODEL_ID, { dtype: "q8", progress_callback: cb });
+    model = await AutoModelForCausalLM.from_pretrained(MODEL_ID, {
+      dtype: "q8",
+      model_file_name: "decoder_model",   // loads onnx/decoder_model_quantized.onnx (~84 MB, fits in the repo)
+      progress_callback: cb,
+    });
     $("prog").value = 100;
     $("prog-status").textContent = "Model ready.";
     $("input-panel").classList.remove("hidden");

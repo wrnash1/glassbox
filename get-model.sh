@@ -17,7 +17,7 @@ FILES=(
   "tokenizer.json"
   "tokenizer_config.json"
   "generation_config.json"
-  "onnx/model_quantized.onnx"
+  "onnx/decoder_model_quantized.onnx"
 )
 
 mkdir -p "$DEST/onnx"
@@ -41,11 +41,11 @@ for f in "${FILES[@]}"; do
 done
 
 # sanity check: the model file must be tens of MB, not a stub or error page
-if [ -f "$DEST/onnx/model_quantized.onnx" ]; then
-  size=$(wc -c < "$DEST/onnx/model_quantized.onnx")
+if [ -f "$DEST/onnx/decoder_model_quantized.onnx" ]; then
+  size=$(wc -c < "$DEST/onnx/decoder_model_quantized.onnx")
   if [ "$size" -lt 10000000 ]; then
-    echo "!! model_quantized.onnx is only $size bytes — that's a partial/error file, removing it"
-    rm -f "$DEST/onnx/model_quantized.onnx"
+    echo "!! decoder_model_quantized.onnx is only $size bytes — that's a partial/error file, removing it"
+    rm -f "$DEST/onnx/decoder_model_quantized.onnx"
     ok=false
   else
     echo "✓ model_quantized.onnx looks complete ($(( size / 1024 / 1024 )) MB)"
